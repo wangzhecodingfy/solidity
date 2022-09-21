@@ -77,7 +77,7 @@
 #include <libsolutil/Algorithms.h>
 #include <libsolutil/FunctionSelector.h>
 
-#include "solstdlib.h"
+#include <solstdlib.h>
 
 #include <json/json.h>
 
@@ -342,9 +342,6 @@ bool CompilerStack::parse()
 
 	Parser parser{m_errorReporter, m_evmVersion, m_parserErrorRecovery};
 
-	for (auto [name, content]: solidity::solstdlib::sources)
-			m_sources[name].charStream = make_unique<CharStream>(content, name);
-
 	vector<string> sourcesToParse;
 	for (auto const& s: m_sources)
 		sourcesToParse.push_back(s.first);
@@ -363,6 +360,14 @@ bool CompilerStack::parse()
 			for (auto const& import: ASTNode::filteredNodes<ImportDirective>(source.ast->nodes()))
 			{
 				solAssert(!import->path().empty(), "Import path cannot be empty.");
+
+				auto it = solidity::solstdlib::sources.find(import->path());
+				if (it != solidity::solstdlib::sources.end())
+				{
+					auto [name, content] = *it;
+					m_sources[name].charStream = make_unique<CharStream>(content, name);
+					sourcesToParse.push_back(name);
+				}
 
 				// The current value of `path` is the absolute path as seen from this source file.
 				// We first have to apply remappings before we can store the actual absolute path
@@ -1147,7 +1152,6 @@ StringMap CompilerStack::loadMissingSources(SourceUnit const& _ast)
 			if (ImportDirective const* import = dynamic_cast<ImportDirective*>(node.get()))
 			{
 				string const& importPath = *import->annotation().absolutePath;
-
 				if (m_sources.count(importPath) || newSources.count(importPath))
 					continue;
 
