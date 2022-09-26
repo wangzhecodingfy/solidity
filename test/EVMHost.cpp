@@ -401,6 +401,9 @@ evmc::bytes32 EVMHost::convertToEVMC(h256 const& _data)
 evmc::result EVMHost::precompileECRecover(evmc_message const& _message) noexcept
 {
 	// NOTE this is a partial implementation for some inputs.
+
+	int64_t gas_cost = evmasm::GasCosts::precompileEcrecoverGas;
+
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
 		{
 			fromHex(
@@ -411,7 +414,7 @@ evmc::result EVMHost::precompileECRecover(evmc_message const& _message) noexcept
 			),
 			{
 				fromHex("000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
-				evmasm::GasCosts::precompileEcrecoverGas
+				gas_cost
 			}
 		},
 		{
@@ -423,14 +426,14 @@ evmc::result EVMHost::precompileECRecover(evmc_message const& _message) noexcept
 			),
 			{
 				fromHex("0000000000000000000000008743523d96a1b2cbe0c6909653a56da18ed484af"),
-				evmasm::GasCosts::precompileEcrecoverGas
+				gas_cost
 			}
 		}
 	};
 	evmc::result result = precompileGeneric(_message, inputOutput);
 	// ECRecover will return success with empty response in case of failure
 	if (result.status_code != EVMC_SUCCESS && result.status_code != EVMC_OUT_OF_GAS)
-		return resultWithGas(_message.gas, evmasm::GasCosts::precompileEcrecoverGas, {});
+		return resultWithGas(_message.gas, gas_cost, {});
 	return result;
 }
 
@@ -830,7 +833,6 @@ evmc::result EVMHost::precompileALTBN128G1Add(evmc_message const& _message) noex
 			}
 		}
 	};
-	// TODO: consume gas
 	return precompileGeneric(_message, inputOutput);
 }
 
@@ -920,7 +922,6 @@ evmc::result EVMHost::precompileALTBN128G1Mul(evmc_message const& _message) noex
 			}
 		}
 	};
-	// TODO: consume gas
 	return precompileGeneric(_message, inputOutput);
 }
 
