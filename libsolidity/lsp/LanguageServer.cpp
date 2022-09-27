@@ -87,12 +87,12 @@ int toDiagnosticSeverity(Error::Type _errorType)
 
 Json semanticTokensLegend()
 {
-	Json legend = Json::object();
+	Json legend{Json::object()};
 
 	// NOTE! The (alphabetical) order and items must match exactly the items of
 	//       their respective enum class members.
 
-	Json tokenTypes = Json::array();
+	Json tokenTypes{Json::array()};
 	tokenTypes.emplace_back("class");
 	tokenTypes.emplace_back("comment");
 	tokenTypes.emplace_back("enum");
@@ -115,7 +115,7 @@ Json semanticTokensLegend()
 	tokenTypes.emplace_back("variable");
 	legend["tokenTypes"] = tokenTypes;
 
-	Json tokenModifiers = Json::array();
+	Json tokenModifiers{Json::array()};
 	tokenModifiers.emplace_back("abstract");
 	tokenModifiers.emplace_back("declaration");
 	tokenModifiers.emplace_back("definition");
@@ -282,7 +282,7 @@ void LanguageServer::compileAndUpdateDiagnostics()
 			// LSP only has diagnostics applied to individual files.
 			continue;
 
-		Json jsonDiag;
+		Json jsonDiag{Json::object()};
 		jsonDiag["source"] = "solc";
 		jsonDiag["severity"] = toDiagnosticSeverity(error->type());
 		jsonDiag["code"] = Json{error->errorId().error};
@@ -295,7 +295,7 @@ void LanguageServer::compileAndUpdateDiagnostics()
 		if (auto const* secondary = error->secondarySourceLocation())
 			for (auto&& [secondaryMessage, secondaryLocation]: secondary->infos)
 			{
-				Json jsonRelated;
+				Json jsonRelated{Json::object()};
 				jsonRelated["message"] = secondaryMessage;
 				jsonRelated["location"] = toJson(secondaryLocation);
 				jsonDiag["relatedInformation"].emplace_back(jsonRelated);
@@ -306,7 +306,7 @@ void LanguageServer::compileAndUpdateDiagnostics()
 
 	if (m_client.traceValue() != TraceValue::Off)
 	{
-		Json extra;
+		Json extra{Json::object()};
 		extra["openFileCount"] = Json{diagnosticsBySourceUnit.size()};
 		m_client.trace("Number of currently open files: " + to_string(diagnosticsBySourceUnit.size()), extra);
 	}
@@ -314,7 +314,7 @@ void LanguageServer::compileAndUpdateDiagnostics()
 	m_nonemptyDiagnostics.clear();
 	for (auto&& [sourceUnitName, diagnostics]: diagnosticsBySourceUnit)
 	{
-		Json params;
+		Json params{Json::object()};
 		params["uri"] = m_fileRepository.sourceUnitNameToUri(sourceUnitName);
 		if (!diagnostics.empty())
 			m_nonemptyDiagnostics.insert(sourceUnitName);
@@ -406,7 +406,7 @@ void LanguageServer::handleInitialize(MessageID _id, Json const& _args)
 	if (_args["initializationOptions"].is_object())
 		changeConfiguration(_args["initializationOptions"]);
 
-	Json replyArgs;
+	Json replyArgs{Json::object()};
 	replyArgs["serverInfo"]["name"] = "solc";
 	replyArgs["serverInfo"]["version"] = string(VersionNumber);
 	replyArgs["capabilities"]["definitionProvider"] = true;
@@ -438,7 +438,7 @@ void LanguageServer::semanticTokensFull(MessageID _id, Json const& _args)
 	m_compilerStack.charStream(sourceName);
 	Json data = SemanticTokensBuilder().build(ast, m_compilerStack.charStream(sourceName));
 
-	Json reply = Json::object();
+	Json reply{Json::object()};
 	reply["data"] = data;
 
 	m_client.reply(_id, std::move(reply));

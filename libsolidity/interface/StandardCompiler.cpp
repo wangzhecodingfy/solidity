@@ -388,7 +388,7 @@ Json collectEVMObject(
 	function<bool(string)> const& _artifactRequested
 )
 {
-	Json output = Json::object();
+	Json output{Json::object()};
 	if (_artifactRequested("object"))
 		output["object"] = _object.toHex();
 	if (_artifactRequested("opcodes"))
@@ -1546,6 +1546,7 @@ Json StandardCompiler::formatFunctionDebugData(
 	map<string, evmasm::LinkerObject::FunctionDebugData> const& _debugInfo
 )
 {
+	static_assert(is_same_v<Json::number_unsigned_t, uint64_t>);
 	Json ret{Json::object()};
 	for (auto const& [name, info]: _debugInfo)
 	{
