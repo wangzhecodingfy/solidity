@@ -206,6 +206,7 @@ ASTPointer<PragmaDirective> Parser::parsePragmaDirective()
 	expectToken(Token::Pragma);
 	vector<string> literals;
 	vector<Token> tokens;
+	bool useStdLib = false;
 	do
 	{
 		Token token = m_scanner->currentToken();
@@ -225,7 +226,18 @@ ASTPointer<PragmaDirective> Parser::parsePragmaDirective()
 	nodeFactory.markEndPosition();
 	expectToken(Token::Semicolon);
 
-	if (literals.size() >= 1 && literals[0] == "solidity")
+	if (!literals.empty() && literals[0] == "stdlib")
+	{
+		if (m_evmVersion < EVMVersion::constantinople())
+			m_errorReporter.syntaxError(
+				6634_error,
+				nodeFactory.location(),
+				"\"pragma stdlib\" requires Constantinople EVM version at the minimum."
+			);
+		useStdLib = true;
+	}
+
+	if (!literals.empty() && literals[0] == "solidity")
 	{
 		parsePragmaVersion(
 			nodeFactory.location(),
@@ -234,7 +246,7 @@ ASTPointer<PragmaDirective> Parser::parsePragmaDirective()
 		);
 	}
 
-	return nodeFactory.createNode<PragmaDirective>(tokens, literals);
+	return nodeFactory.createNode<PragmaDirective>(tokens, literals, useStdLib);
 }
 
 ASTPointer<ImportDirective> Parser::parseImportDirective()
@@ -1110,7 +1122,6 @@ ASTPointer<TypeName> Parser::parseTypeName()
 		unsigned secondSize;
 		tie(firstSize, secondSize) = m_scanner->currentTokenInfo();
 		ElementaryTypeNameToken elemTypeName(token, firstSize, secondSize);
-		ASTNodeFactory nodeFactory(*this);
 		nodeFactory.markEndPosition();
 		advance();
 		auto stateMutability = elemTypeName.token() == Token::Address
