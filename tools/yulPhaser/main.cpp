@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 
 		std::cerr << std::endl;
 		std::cerr << "ERROR: " << exception.what() << std::endl;
-		return 1;
+		return 2;
 	}
 	catch (solidity::phaser::BadInput const& exception)
 	{
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 
 		std::cerr << std::endl;
 		std::cerr << "ERROR: " << exception.what() << std::endl;
-		return 1;
+		return 2;
 	}
 	catch (solidity::util::Exception const& exception)
 	{
@@ -65,26 +65,25 @@ int main(int argc, char** argv)
 		char const* const* function = boost::get_error_info<boost::throw_function>(exception);
 		if (function != nullptr)
 			std::cerr << "Function: " << *function << std::endl;
-
-		// Let it crash. The terminate() will print some more stuff useful for debugging like
-		// what() and the actual exception type.
-		throw;
+		std::cerr << "ERROR: " << exception.what() << std::endl;
+		return 2;
 	}
-	catch (std::exception const&)
+	catch (std::exception const& exception)
 	{
 		// Again, probably a bug but this time it's just plain std::exception so there's no point
 		// in doing anything special. terminate() will do an adequate job.
 		std::cerr << std::endl;
 		std::cerr << "UNCAUGHT EXCEPTION!" << std::endl;
-		throw;
+		std::cerr << "ERROR: " << exception.what() << std::endl;
+		return 2;
 	}
 	catch (...)
 	{
 		// Some people don't believe these exist.
-		// I have no idea what this is and it's flying towards me so technically speaking it's an
+		// I have no idea what this is, and it's flying towards me so technically speaking it's an
 		// unidentified flying object.
 		std::cerr << std::endl;
 		std::cerr << "UFO SPOTTED!" << std::endl;
-		throw;
+		return 2;
 	}
 }
