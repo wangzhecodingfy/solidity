@@ -454,7 +454,7 @@ evmc::result EVMHost::precompileSha256(evmc_message const& _message) noexcept
 	));
 
 	// Base 60 gas + 12 gas / word.
-	int64_t gas_cost = 60 + 12 * ((_message.input_size + 31) / 32);
+	int64_t gas_cost = 60 + 12 * ((static_cast<int64_t>(_message.input_size) + 31) / 32);
 
 	return resultWithGas(_message.gas, gas_cost, hash);
 }
@@ -464,7 +464,7 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 	// NOTE this is a partial implementation for some inputs.
 
 	// Base 600 gas + 120 gas / word.
-	int64_t gas_cost = 600 + 120 * ((_message.input_size + 31) / 32);
+	int64_t gas_cost = 600 + 120 * ((static_cast<int64_t>(_message.input_size) + 31) / 32);
 
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
 		{
@@ -566,7 +566,7 @@ evmc::result EVMHost::precompileIdentity(evmc_message const& _message) noexcept
 	data = bytes(_message.input_data, _message.input_data + _message.input_size);
 
 	// Base 15 gas + 3 gas / word.
-	int64_t gas_cost = 15 + 3 * ((_message.input_size + 31) / 32);
+	int64_t gas_cost = 15 + 3 * ((static_cast<int64_t>(_message.input_size) + 31) / 32);
 
 	return resultWithGas(_message.gas, gas_cost, data);
 }
@@ -937,8 +937,8 @@ evmc::result EVMHost::precompileALTBN128PairingProduct(evmc_message const& _mess
 {
 	// Base + per pairing gas.
 	int64_t gas_cost = (_revision < EVMC_ISTANBUL) ?
-		(100000 + 80000 * (_message.input_size / 192)) :
-		(45000 + 34000 * (_message.input_size / 192));
+		(100000 + 80000 * (static_cast<int64_t>(_message.input_size) / 192)) :
+		(45000 + 34000 * (static_cast<int64_t>(_message.input_size) / 192));
 
 	// NOTE this is a partial implementation for some inputs.
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
