@@ -1105,7 +1105,7 @@ evmc::result EVMHost::precompileGeneric(
 	bytes input(_message.input_data, _message.input_data + _message.input_size);
 	if (_inOut.count(input))
 	{
-		auto [ output, gas_required] = _inOut.at(input);
+		auto [ output, gas_required ] = _inOut.at(input);
 		return resultWithGas(_message.gas, gas_required, output);
 	}
 	else

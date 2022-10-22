@@ -114,7 +114,7 @@ private:
 	static evmc::result precompileALTBN128G1Mul(evmc_message const& _message, evmc_revision _revision) noexcept;
 	static evmc::result precompileALTBN128PairingProduct(evmc_message const& _message, evmc_revision _revision) noexcept;
 	static evmc::result precompileGeneric(evmc_message const& _message, std::map<bytes, std::tuple<bytes, int64_t>> const& _inOut) noexcept;
-	/// @returns a result object with nas usage and result data taken from @a _data.
+	/// @returns a result object with gas usage and result data taken from @a _data.
 	/// The outcome will be a failure if the limit < required.
 	/// @note The return value is only valid as long as @a _data is alive!
 	static evmc::result resultWithGas(int64_t gas_limit, int64_t gas_required, bytes const& _data) noexcept;
