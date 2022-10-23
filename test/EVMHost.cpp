@@ -224,7 +224,12 @@ evmc::result EVMHost::call(evmc_message const& _message) noexcept
 	else if (_message.destination == 0x0000000000000000000000000000000000000005_address && m_evmVersion >= langutil::EVMVersion::byzantium())
 		return precompileModExp(_message);
 	else if (_message.destination == 0x0000000000000000000000000000000000000006_address && m_evmVersion >= langutil::EVMVersion::byzantium())
-		return precompileALTBN128G1Add(_message, m_evmRevision);
+	{
+		if (m_evmVersion <= langutil::EVMVersion::istanbul())
+			return precompileALTBN128G1Add<EVMC_ISTANBUL>(_message);
+		else
+			return precompileALTBN128G1Add<EVMC_LONDON>(_message);
+	}
 	else if (_message.destination == 0x0000000000000000000000000000000000000007_address && m_evmVersion >= langutil::EVMVersion::byzantium())
 		return precompileALTBN128G1Mul(_message, m_evmRevision);
 	else if (_message.destination == 0x0000000000000000000000000000000000000008_address && m_evmVersion >= langutil::EVMVersion::byzantium())
@@ -465,7 +470,6 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 	// NOTE this is a partial implementation for some inputs.
 
 	// Base 600 gas + 120 gas / word.
-//	int64_t gas_cost = 600 + 120 * ((static_cast<int64_t>(_message.input_size) + 31) / 32);
 	constexpr auto calc_cost = [](int64_t size) -> int64_t {
 		return 600 + 120 * ((size + 31) / 32);
 	};
@@ -480,10 +484,10 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 		},
 		{
 			fromHex("0000000000000000000000000000000000000000000000000000000000000004"),
-			make_tuple(
+			{
 				fromHex("0000000000000000000000001b0f3c404d12075c68c938f9f60ebea4f74941a0"),
 				calc_cost(32)
-			)
+			}
 		},
 		{
 			fromHex("0000000000000000000000000000000000000000000000000000000000000005"),
@@ -581,12 +585,13 @@ evmc::result EVMHost::precompileModExp(evmc_message const&) noexcept
 	return resultWithFailure();
 }
 
-evmc::result EVMHost::precompileALTBN128G1Add(evmc_message const& _message, evmc_revision _revision) noexcept
+template <evmc_revision Revision>
+evmc::result EVMHost::precompileALTBN128G1Add(evmc_message const& _message) noexcept
 {
 	// NOTE this is a partial implementation for some inputs.
 
 	// Fixed 500 or 150 gas.
-	int64_t gas_cost = (_revision < EVMC_ISTANBUL) ? 500 : 150;
+	int64_t gas_cost = (Revision < EVMC_ISTANBUL) ? 500 : 150;
 
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
 		{
@@ -943,6 +948,12 @@ evmc::result EVMHost::precompileALTBN128PairingProduct(evmc_message const& _mess
 	int64_t gas_cost = (_revision < EVMC_ISTANBUL) ?
 		(100000 + 80000 * (static_cast<int64_t>(_message.input_size) / 192)) :
 		(45000 + 34000 * (static_cast<int64_t>(_message.input_size) / 192));
+//	constexpr auto calc_cost = [](unsigned points) -> int64_t {
+//		// Number of 192-byte points.
+//		return (Revision < EVMC_ISTANBUL) ?
+//			(100000 + 80000 * points):
+//			(45000 + 34000 * points);
+//	};
 
 	// NOTE this is a partial implementation for some inputs.
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
