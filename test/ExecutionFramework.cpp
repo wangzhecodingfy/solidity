@@ -202,7 +202,7 @@ void ExecutionFramework::sendMessage(bytes const& _data, bool _isCreation, u256 
 	{
 		cout << " out:     " << util::toHex(m_output) << endl;
 		cout << " result: " << static_cast<size_t>(result.status_code) << endl;
-		cout << " gas used: " << (100000000 - result.gas_left) << endl;
+		cout << " gas used: " << (InitialGas - result.gas_left).str() << endl;
 		cout << " gas used (incl refund): " << m_gasUsed.str() << endl;
 		cout << " gas refund: " << result.gas_refund << endl;
 	}
