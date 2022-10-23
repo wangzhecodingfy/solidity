@@ -467,6 +467,7 @@ evmc::result EVMHost::precompileSha256(evmc_message const& _message) noexcept
 
 evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 {
+//	return resultWithFailure();
 	// NOTE this is a partial implementation for some inputs.
 
 	// Base 600 gas + 120 gas / word.
@@ -1131,8 +1132,15 @@ evmc::result EVMHost::precompileGeneric(
 	bytes input(_message.input_data, _message.input_data + _message.input_size);
 	if (_inOut.count(input))
 	{
-		auto [ output, gas_required ] = _inOut.at(input);
-		cout << input << " -> " << output << " @ " <<  gas_required << "\n";
+		auto ret = _inOut.at(input);
+		bytes const& output = get<0>(ret);
+		int64_t gas_required = get<1>(ret);
+//		bytes output;
+//		int64_t gas_required;
+//		tie(output, gas_required) = _inOut.at(input);
+		//auto const [ output, gas_required ] = _inOut.at(input);
+		//cout << input << " -> " << output << " @ " <<  gas_required << "\n";
+//		cout << input << " -> " << output << "\n";
 		return resultWithGas(_message.gas, gas_required, output);
 	}
 	else
