@@ -30,6 +30,7 @@
 #include <libsolutil/Assertions.h>
 #include <libsolutil/Keccak256.h>
 #include <libsolutil/picosha2.h>
+#include <libsolutil/CommonIO.h>
 
 using namespace std;
 using namespace solidity;
@@ -403,7 +404,7 @@ evmc::result EVMHost::precompileECRecover(evmc_message const& _message) noexcept
 	// NOTE this is a partial implementation for some inputs.
 
 	// Fixed cost of 3000 gas.
-	int64_t gas_cost = 3000;
+	constexpr int64_t gas_cost = 3000;
 
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
 		{
@@ -464,42 +465,45 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 	// NOTE this is a partial implementation for some inputs.
 
 	// Base 600 gas + 120 gas / word.
-	int64_t gas_cost = 600 + 120 * ((static_cast<int64_t>(_message.input_size) + 31) / 32);
+//	int64_t gas_cost = 600 + 120 * ((static_cast<int64_t>(_message.input_size) + 31) / 32);
+	constexpr auto calc_cost = [](int64_t size) -> int64_t {
+		return 600 + 120 * ((size + 31) / 32);
+	};
 
 	static map<bytes, tuple<bytes, int64_t>> const inputOutput{
 		{
 			bytes{},
 			{
 				fromHex("0000000000000000000000009c1185a5c5e9fc54612808977ee8f548b2258d31"),
-				gas_cost
+				calc_cost(0)
 			}
 		},
 		{
 			fromHex("0000000000000000000000000000000000000000000000000000000000000004"),
-			{
+			make_tuple(
 				fromHex("0000000000000000000000001b0f3c404d12075c68c938f9f60ebea4f74941a0"),
-				gas_cost
-			}
+				calc_cost(32)
+			)
 		},
 		{
 			fromHex("0000000000000000000000000000000000000000000000000000000000000005"),
 			{
 				fromHex("000000000000000000000000ee54aa84fc32d8fed5a5fe160442ae84626829d9"),
-				gas_cost
+				calc_cost(32)
 			}
 		},
 		{
 			fromHex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
 			{
 				fromHex("0000000000000000000000001cf4e77f5966e13e109703cd8a0df7ceda7f3dc3"),
-				gas_cost
+				calc_cost(32)
 			}
 		},
 		{
 			fromHex("0000000000000000000000000000000000000000000000000000000000000000"),
 			{
 				fromHex("000000000000000000000000f93175303eba2a7b372174fc9330237f5ad202fc"),
-				gas_cost
+				calc_cost(32)
 			}
 		},
 		{
@@ -511,7 +515,7 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 			),
 			{
 				fromHex("000000000000000000000000f93175303eba2a7b372174fc9330237f5ad202fc"),
-				gas_cost
+				calc_cost(100)
 			}
 		},
 		{
@@ -523,7 +527,7 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 			),
 			{
 				fromHex("0000000000000000000000004f4fc112e2bfbe0d38f896a46629e08e2fcfad5"),
-				gas_cost
+				calc_cost(100)
 			}
 		},
 		{
@@ -535,7 +539,7 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 			),
 			{
 				fromHex("000000000000000000000000c0a2e4b1f3ff766a9a0089e7a410391730872495"),
-				gas_cost
+				calc_cost(100)
 			}
 		},
 		{
@@ -545,14 +549,14 @@ evmc::result EVMHost::precompileRipeMD160(evmc_message const& _message) noexcept
 			),
 			{
 				fromHex("00000000000000000000000036c6b90a49e17d4c1e1b0e634ec74124d9b207da"),
-				gas_cost
+				calc_cost(64)
 			}
 		},
 		{
 			fromHex("6162636465666768696a6b6c6d6e6f707172737475767778797a414243444546"),
 			{
 				fromHex("000000000000000000000000ac5ab22e07b0fb80c69b6207902f725e2507e546"),
-				gas_cost
+				calc_cost(32)
 			}
 		}
 	};
@@ -1098,6 +1102,17 @@ evmc::result EVMHost::precompileALTBN128PairingProduct(evmc_message const& _mess
 	return precompileGeneric(_message, inputOutput);
 }
 
+inline std::ostream& operator<<(std::ostream& os, bytes const& _bytes)
+{
+        std::ostringstream ss;
+        ss << std::hex;
+        std::copy(_bytes.begin(), _bytes.end(), std::ostream_iterator<int>(ss, ","));
+        std::string result = ss.str();
+        result.pop_back();
+        os << "[" + result + "]";
+        return os;
+}
+
 evmc::result EVMHost::precompileGeneric(
 	evmc_message const& _message,
 	map<bytes, tuple<bytes, int64_t>> const& _inOut) noexcept
@@ -1106,6 +1121,7 @@ evmc::result EVMHost::precompileGeneric(
 	if (_inOut.count(input))
 	{
 		auto [ output, gas_required ] = _inOut.at(input);
+		cout << input << " -> " << output << " @ " <<  gas_required << "\n";
 		return resultWithGas(_message.gas, gas_required, output);
 	}
 	else
@@ -1138,6 +1154,7 @@ evmc::result EVMHost::resultWithGas(
 	}
 	result.output_data = _data.data();
 	result.output_size = _data.size();
+//	cout << "resultWithGas: " << bytes(_data.data(), _data.size()) << "\n";
 	return result;
 }
 
